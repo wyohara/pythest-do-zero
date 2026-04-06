@@ -11,6 +11,12 @@ Esse repositório busca resumir e ensinar o básico de TDD usando python e pythe
 3. [Conhecendo o Pyteste](/modulos/modulo_1/README.md#Conhecendo-o-Pyteste)
 4. [Primeiros passos com pytest](/modulos/modulo_1/README.md#Primeiros-passos-com-pytest)
 
+### :arrow_forward: Módulo 2 - Aprofundando no pytest
+1. [Executando testes](/modulos/modulo_2/README.md#execução-de-testes)
+2. [Usando assert](/modulos/modulo_2/README.md#verificando-teste-com-assert)
+3. [Verificando excessões](/modulos/modulo_2/README.md#verificando-excessões)
+
+
 ## :books: Bibliografia  
 - *OKKEN, Brian. Python Testing with pytest: simple, rapid, effective, and scalable testing. Raleigh: The Pragmatic Bookshelf, 2017.*  
 - *BECK, Kent. Test-Driven Development: by example. Boston: Addison-Wesley, 2010.*  

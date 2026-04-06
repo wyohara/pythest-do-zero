@@ -70,23 +70,16 @@ Com isso podemos ir até a pasta onde se encontra o primeiro teste:
 ```
 cd .\modulos\modulo_1\codigo\
 ```  
-
 ### Rodando o primeiro teste  
 Para iniciar o primeiro teste basta rodar:  
 
 ```python
 #pasta .\modulos\modulo_1\codigo\
-py.test.exe .\teste_1.py
-```
+py.test.exe .\test_1.py  
+```  
 Perceba que esse teste irá funcionar pois `(1, 2, 3) == (1, 2, 3)` mas se alterarmos qualquer valor irá ocorrer um erro:  
 
 ```python
 #pasta .\modulos\modulo_1\codigo\
-py.test.exe .\teste_2.py
-```
-Você ainda consegue ver ainda mais detalhes ao usar -v:
-
-```python
-#pasta .\modulos\modulo_1\codigo\
-py.test.exe -v .\teste_2.py
-```
+py.test.exe .\test_2.py
+```  
