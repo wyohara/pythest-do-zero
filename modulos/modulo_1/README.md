@@ -77,9 +77,13 @@ Para iniciar o primeiro teste basta rodar:
 #pasta .\modulos\modulo_1\codigo\
 py.test.exe .\test_1.py  
 ```  
+O código pode ser conferido [aqui](/modulos/modulo_1/codigo/test_1.py)  
+
+
 Perceba que esse teste irá funcionar pois `(1, 2, 3) == (1, 2, 3)` mas se alterarmos qualquer valor irá ocorrer um erro:  
 
 ```python
 #pasta .\modulos\modulo_1\codigo\
 py.test.exe .\test_2.py
 ```  
+O código pode ser conferido [aqui](/modulos/modulo_1/codigo/test_2.py)    
