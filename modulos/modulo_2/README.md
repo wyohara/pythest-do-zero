@@ -26,7 +26,8 @@ O codigo pode ser conferido [aqui](/modulos/modulo_2/codigo/test_1.py)
 
 ---
 ## Verificando testes com assert
-O pytest usa a função padrão `assert` do python para verificar se o teste funciona corretamente.
+O pytest usa a função padrão `assert` do python para verificar se o teste funciona corretamente.  
+
 ```python
 def quadrado(x):
     return x **2
@@ -171,7 +172,9 @@ def test_salada_de_fruta(tigela_de_frutas):
 O codigo pode ser conferido [aqui](/modulos/modulo_2/codigo/test_3.py)  
 
 
-Uma fixture também pode ser usada em cadeia, combinando com outras fixtures. Mas cuidado, ***a necessidade de usar muitas fixutes em cadeia ou muito longas, significa que o seu código está muito acoplado, sendo necessário refatorar.***  
+Uma fixture também pode ser usada em cadeia, combinando com outras fixtures.  
+    Mas cuidado!  
+A necessidade de usar muitas fixutes em cadeia ou muito longas, significa que o ***seu código está muito acoplado, sendo necessário refatorar.***  
 
 ```python
 import pytest
@@ -234,3 +237,270 @@ def test_lista_mista(ordenar, lista_esperada):
     assert ordenar == lista_esperada
 ```
 - O codigo pode ser conferido [aqui](/modulos/modulo_2/codigo/test_5.py)  
+
+Além disso as fixtures sempre ***são executadas da direita para a esquerda***:  
+*OBS: pode usar -s para mostrar os prints.*
+```python
+
+```
+
+---
+## fixtures automáticas
+
+Outra grande vantagem das fixtures é sua capacidade de se adaptar aos testes de forma simples e intuitiva. Entendendo o básico das fixtures vamos começar a olhar os comandos avançados das fixtures.  
+
+As fixtures não precisam ser chamadas diretamente, você pode definir fixtures que são executadas automaticamente em cada teste:  
+```python
+import pytest
+
+
+@pytest.fixture
+def primeira_entrada():
+    return "a"
+
+
+@pytest.fixture
+def lista_ordenada(primeira_entrada):
+    return []
+
+
+#fixture de uso automático
+@pytest.fixture(autouse=True)
+def append_first(lista_ordenada, primeira_entrada):
+    #irá adicionar o valor 'a' a lista automaticamente
+    return lista_ordenada.append(primeira_entrada)
+
+
+def test_somente_String(lista_ordenada, primeira_entrada):
+    #verifica se a fixture automática funcionou, logo ['a']==['a']
+    assert lista_ordenada == [primeira_entrada]
+
+
+def test_string_and_int(lista_ordenada, primeira_entrada):
+    #verifica se a fixture tornou ['a',2]
+    lista_ordenada.append(2)
+    assert lista_ordenada == [primeira_entrada, 2]
+```  
+- O codigo pode ser conferido [aqui](/modulos/modulo_2/codigo/test_6.py)  
+
+
+---
+## fixture por escopo  
+
+Mas e se eu quiser usar uma fixture em outro local fora do arquivo, como proceder? para isso usamos o ***scope***. Ele altera o escopo de trabalho da fixture podendo ser usado em vários níveis:  
+1. `scope='function'` - é o escopo padrão. A fixture é destruída ao fim da execução de cada ***função ou método***.
+2. `scope='class'` - éo escopo de classe. A fixture é destruída ao fim da execução da **classe de teste**.
+3. `scope='module'` - o escopo de módulo ou arquivo. A fixture só é destruída ao fim da execução do **arquivo de testes**, tendo um ou vários testes.
+4. `scope='package'` - o escopo de pacote ou pasta, que é composto por um ou vários arquivos. A fixture só é destruída ao fim da execução dos **testes na pasta**.
+5. `scope='session'` - o escopo de sessão de testes, podendo conter vários pacotes. A fixture só é encerrada ao fim da **dos testes**.
+6. `scope='determine_scope'` - o pytest determina por ta própria o tipo de scope
+- É o brigatório que a fixture que opere em escopo separado fique no arquivo `contest.py`.  
+- Vale destacar que cada fixture só possui uma instância, assim se criar uma fixtura com mesmo nome, ela será reescrita.  
+- O código pode ser verificado [aqui](/modulos/modulo_2/codigo/teste_escopo/) 
+
+### Uso de fixture sem repetição
+Quando for usar fixtures muito repetitivas, podemos usar o escopo para manter as configurações fixas. Normalmente usamos `scope='class' autouse=True`:
+
+```python
+@pytest.fixture(scope="class")
+def landing_page(driver, login):
+    """Página inicial - depende do login que já aconteceu."""
+    return LandingPage(driver)
+
+class TestPaginaInicialSuccesso:
+    @pytest.fixture(scope="class", autouse=True)
+    def login(self, driver, url, user):
+        "Esse setup executado UMA vez para toda a classe. Assim podemos usar os métodos para os testes."
+        driver.get(urljoin(url, "/login"))
+        pagina = LoginPage(driver)
+        pagina.login(user)
+    
+    def test_nome_no_header(self, landing_page, user):
+        #landing_page seria fixture que retorna a tela
+        assert landing_page.header == f"Welcome, {user.name}!"
+    
+    def test_sign_out_button(self, landing_page):
+        #landing_page seria fixture que retorna a tela
+        assert landing_page.sign_out_button.is_displayed()
+    
+    def test_profile_link(self, landing_page, user):
+        #landing_page seria fixture que retorna a tela
+        assert landing_page.profile_link.get_attribute("href") == profile_href
+```
+
+---
+## Ciclo de vida da fixture
+
+Teardown é o processo de desmontar a fixture após terminar o seu uso, ela serve para funções como:
+- Remover dados criados durante o teste
+- Fechar conexões (banco, rede, arquivos)
+- Restaurar o sistema ao estado original
+
+Para isso usamos o comando `yield` [aqui](https://docs.python.org/pt-br/3/reference/expressions.html#yield-expressions) onde lançamos os valores e pausamos a fixture e esperamos o teste ser concluido para terminar a fixuture:
+1. Criamos a fixture
+2. Montamos todos os valores necessário. Ex.: abrir consulta com o banco
+3. Entregamos o dados com yield
+4. Aguardamos o teste acabar
+5. Desmontamos os dados. Ex.: fechar consulta com o banco
+6. Encerramos a fixture
+
+veja o exemplo:
+```python
+import pytest
+import os
+
+@pytest.fixture
+def verificar_arquivo_texto():
+    path = "arquivo.txt"
+    with open(path, "w", encoding='utf-8') as f:
+        f.write('arquivo criado\n')
+    yield path
+    os.remove(path)
+
+
+def test_1(verificar_arquivo_texto):    
+    with open(verificar_arquivo_texto, "r", encoding='utf-8') as f:
+        texto = f.read()
+        assert 'arquivo criado' in texto
+```  
+- O código pode ser verificado [aqui](/modulos/modulo_2/codigo/test_7.py)  
+
+É possível desmontar o código usando `request.addfinalizer` que agenda a exclusão do teste após a conclusão, mas lembre-se que o o processo de desmonte do teste respeita o [scope](#fixture-por-escopo).  
+
+``` python
+@pytest.fixture
+def criar_arquivo_texto(request):
+    path = "arquivo.txt"
+    
+    with open(path, "w", encoding='utf-8') as f:
+        f.write('arquivo criado\n')
+    
+    def excluir_arquivo_texto():
+        if os.path.exists(path):
+            os.remove(path)
+    
+    request.addfinalizer(excluir_arquivo_texto)
+    
+    return path
+
+def test_2(criar_arquivo_texto):    
+    with open(criar_arquivo_texto, "r", encoding='utf-8') as f:
+        texto = f.read()
+        assert 'arquivo criado' in texto    
+```  
+- O código pode ser verificado [aqui](/modulos/modulo_2/codigo/test_7.py)  
+
+## Uso seguro do teardown
+Durante o processo de desmonte do teste ou ***teardown*** é preciso tomar alguns cuidados para que não ocorra risco no desmonte. Para demonstrar image o cenário hipotético:  
+
+```python
+
+@pytest.fixture
+def setup_problematico():    
+    servidor_1 = TCPServer(8888)
+    servidor_2 = TCPServer(8889)
+    servidor_1.start()
+    servidor_2.start()
+    
+    # Envia mensagem do servidor_1 para o servidor_2
+    message = "Olá, servidor 2!"
+    servidor_1.enviar_mensagem(message, servidor_2)
+    time.sleep(0.1)
+    
+    yield servidor_2, message
+
+    #============================================================
+    # Teardown - PODE NÃO EXECUTAR se houver erro nas mensagens
+    servidor_2.limpar_mensagens()
+    servidor_1.stop()
+    servidor_2.stop()
+
+
+def test_mensagem_problematica(setup_problematico):
+    server2, message = setup_problematico
+    assert message in server2.mensagens
+    print(f"[TESTE] Mensagem recebida: {server2.mensagens}")
+```  
+- O código pode ser verificado [aqui](/modulos/modulo_2/codigo/test_8.py)  
+
+Exemplo de uma fixture com problemas:
+```python
+#==========================================
+#       Setup com defeito forçado
+#==========================================
+@pytest.fixture
+def setup_com_erro():
+    "Fixture que falha no meio do setup."
+    
+    server1 = TCPServer(8888)
+    server2 = TCPServer(8889)
+    server1.start()
+    server2.start()
+    
+    # ERRO SIMULADO AQUI!
+    raise Exception("Falha crítica no setup do servidor!")
+    
+    # O código abaixo NUNCA executa
+    message = "Esta mensagem nunca será enviada"
+    server1.enviar_mensagem(message, server2)
+    
+    yield server2, message
+    
+    # TEARDOWN nunca executa!
+    server2.limpar_mensagens()
+    server1.stop()
+    server2.stop()
+
+
+def test_com_erro(setup_com_erro):
+    """Este teste nunca executa devido ao erro no setup."""
+    server2, message = setup_com_erro
+    assert message in server2.messages
+```  
+- O código pode ser verificado [aqui](/modulos/modulo_2/codigo/test_8.py)  
+
+Assim a melhor forma de executar o teardown é usar fixtures atômicas, onde cada etapa possui uma fixture. Assim não ocorre problemas na execução e no caso de falha as fixtures posteriores não serão chamadas evitando erro no teardown.  
+
+```python
+# =============================================
+#       VERSÃO CORRETA (Fixtures atomicas)
+# =============================================
+@pytest.fixture
+def server1():
+    "Fixture 1: Cria o primeiro servidor."
+    server = TCPServer(8888)
+    server.start()
+    yield server
+
+    #teardown
+    server.stop()
+
+
+@pytest.fixture
+def server2():
+    "Fixture 2: Cria o segundo servidor."
+    server = TCPServer(8889)
+    server.start()
+    yield server
+
+    #teardown
+    server.limpar_mensagens()
+    server.stop()
+
+
+@pytest.fixture
+def mensagem(server1, server2):
+    "Fixture 3: Enviando mensagem entre servidores."
+    message = "Olá, servidor 2! Esta é uma mensagem de teste."
+    server1.enviar_mensagem(message, server2)
+    time.sleep(0.1)
+    return message
+
+
+def test_mensagem_segura(server2, mensagem):
+    "Teste verificando se o servidor recebeu a mensagem"
+    assert server2.verifica_mensagens(mensagem)
+```  
+- O código pode ser verificado [aqui](/modulos/modulo_2/codigo/test_8.py)  
+
+### Request e introspecção

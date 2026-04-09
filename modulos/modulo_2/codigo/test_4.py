@@ -1,7 +1,14 @@
+#!/usr/bin/env python3
 import pytest
 
+#==============================================================
+#           Teste de ordem de execução de fixtures
+# =============================================================
 
-# Preparo com a fixture
+# py.test.exe .\modulos\modulo_2\codigo\test_4.py
+
+
+# da primeira fixture
 @pytest.fixture
 def primeira_letra():
     return "a"

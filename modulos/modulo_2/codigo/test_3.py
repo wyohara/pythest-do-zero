@@ -1,6 +1,14 @@
+#!/usr/bin/env python3
 import pytest
 
+#==============================================================
+#           Uso repetitivo de fixtures
+# =============================================================
+
+# py.test.exe .\modulos\modulo_2\codigo\test_3.py
+
 class Fruta:
+    'Classe que define se a fruta foi corada ou não'
     def __init__(self, nome):
         self.nome = nome
         self.cortado = False
@@ -9,6 +17,7 @@ class Fruta:
         self.cortado = True
 
 class SaladaDeFruta:
+    'Classe que cria a salada de frutas usando a classe Frutas'
     def __init__(self, *tigela_de_frutas):
         # o asterisco é usado para desempacotar a lista usando um por vez
         self.fruta = tigela_de_frutas
